@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Editar usuario{% endblock %}
+
+{% block content %}
+  <h2>Editar usuario</h2>
+
+  <form method="post">
+    <div class="grid">
+      <div>
+        <label>Usuario (no editable)</label>
+        <input type="text" value="{{ usr.username }}" disabled>
+        <div class="subtle">ID: {{ usr.id }}</div>
+      </div>
+
+      <div>
+        <label>Nombre visible</label>
+        <input type="text" name="display_name" value="{{ usr.display_name or '' }}">
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <label>Rol *</label>
+        <select name="role" required>
+          {% if roles %}
+            {% for r in roles %}
+              <option value="{{ r }}" {% if usr.role == r %}selected{% endif %}>
+                {{ 'usuario' if r == 'usuario' else r }}
+              </option>
+            {% endfor %}
+          {% else %}
+            <option value="usuario" {% if usr.role == 'usuario' %}selected{% endif %}>usuario</option>
+            <option value="admin"   {% if usr.role == 'admin'   %}selected{% endif %}>admin</option>
+          {% endif %}
+        </select>
+        <div class="subtle">No puedes quitar el rol admin al último admin.</div>
+      </div>
+
+      <div>
+        <label>Nueva contraseña (opcional)</label>
+        <input type="password" name="password" minlength="4" placeholder="Dejar en blanco para no cambiar">
+        <div class="subtle">Mínimo 4 caracteres si decides cambiarla.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn" href="{{ url_for('users.usuarios') }}">Volver</a>
+    </div>
+  </form>
+{% endblock %}

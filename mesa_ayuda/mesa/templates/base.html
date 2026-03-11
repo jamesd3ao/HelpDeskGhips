@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Mesa de Ayuda TIC{% endblock %}</title>
+
+    <style>
+      body{
+        font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+        margin:0;background:#f6f7fb;
+      }
+
+      /* ===== HEADER ===== */
+      .site-header{
+        background:#ffffff;          /* Header claro */
+        color:#111827;               /* Texto oscuro para header claro */
+        padding:12px 20px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        border-bottom:1px solid #e5e7eb;  /* línea sutil inferior */
+      }
+
+      /* Marca (logo + texto) */
+      .brand{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        font-weight:700;
+        color:inherit;               /* ← hereda color, NO fuerces blanco */
+        text-decoration:none;
+      }
+      .brand .logo{
+        height:70px;                 /* ← tamaño del logo (ajústalo si quieres) */
+        width:auto;
+        display:block;
+        object-fit:contain;
+      }
+
+      .top-nav{
+        display:flex;
+        align-items:center;
+        gap:14px;
+        flex-wrap:nowrap;            /* evita salto a otra línea */
+      }
+      /* Links de la barra superior: como el header es claro, usa texto oscuro */
+      .top-nav a{
+        color:#111827;
+        text-decoration:none;
+        font-weight:600;
+      }
+      .top-nav a:hover{
+        text-decoration:underline;
+      }
+
+      /* ===== DROPDOWN MENÚ ===== */
+      .menu-wrapper{ position:relative; }
+      .menu-toggle{
+        background:#111827;          /* Botón oscuro para contraste */
+        color:#fff;
+        border:1px solid #374151;
+        padding:6px 10px;
+        border-radius:8px;
+        cursor:pointer;
+        font-weight:600;
+        display:flex;
+        align-items:center;
+        gap:6px;
+      }
+      .menu-panel{
+        position:absolute;
+        right:0;
+        top:calc(100% + 6px);
+        min-width:240px;
+        background:#fff;
+        color:#111827;
+        border:1px solid #d1d5db;
+        border-radius:10px;
+        box-shadow:0 8px 24px rgba(0,0,0,.12);
+        overflow:hidden;
+        z-index:1000;
+      }
+
+      /* ===== ACORDEÓN (solo dentro del panel) ===== */
+      .accordion-btn{
+        width:100%;
+        text-align:left;
+        background:#fff;
+        border:0;
+        padding:10px 12px;
+        border-bottom:1px solid #f3f4f6;
+        font-weight:700;
+        cursor:pointer;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        color:#111827;
+      }
+      .accordion-btn .caret{ transition:transform .2s ease; }
+      .accordion-btn.open .caret{ transform:rotate(180deg); }
+
+      .accordion-content{
+        display:none;
+        flex-direction:column;
+        background:#fafafa;
+      }
+      .accordion-content a{
+        padding:10px 16px;
+        display:block;
+        text-decoration:none;
+        color:#111827;
+        border-bottom:1px solid #e5e7eb;
+      }
+      .accordion-content a:hover{ background:#e5e7eb; }
+
+      .menu-panel hr{
+        margin:0;
+        border:none;
+        border-top:1px solid #f3f4f6;
+      }
+
+      /* ===== TU ESTILO ORIGINAL (no tocado) ===== */
+      .container{padding:20px;max-width:1150px;margin:0 auto}
+      .card{background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:18px;margin-bottom:16px}
+      .btn{display:inline-block;padding:8px 12px;border-radius:8px;text-decoration:none;border:1px solid #d1d5db;background:#fff;color:#111827;font-size:14px;cursor:pointer}
+      .btn.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+      .btn.warn{background:#f59e0b;color:#111;border-color:#f59e0b}
+      .btn.danger{background:#ef4444;color:#fff;border-color:#ef4444}
+      table{width:100%;border-collapse:collapse}
+      th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left}
+      th{background:#f3f4f6}
+      input[type=text],input[type=password],select,textarea,input[type=date],input[type=time]{
+        width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px
+      }
+      textarea{min-height:100px}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+      .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+      .flash{padding:10px 12px;border-radius:8px;margin-bottom:12px}
+      .flash.info{background:#dbeafe;color:#1e40af}
+      .flash.success{background:#dcfce7;color:#065f46}
+      .flash.warning{background:#fef9c3;color:#92400e}
+      .flash.danger{background:#fee2e2;color:#b91c1c}
+      footer{text-align:center;color:#6b7280;padding:20px}
+      .subtle{color:#6b7280;font-size:12px}
+      .row{display:flex;gap:12px;align-items:center}
+      form.inline{display:inline}
+
+      /* ===== Evaluación (1-5) — restaurado ===== */
+      .rating-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0}
+      .rating-label{min-width:200px;font-weight:600;color:#111827}
+      .rating-boxes{display:flex;gap:8px}
+      .rating-box{
+        width:36px;height:36px;border:2px solid #d1d5db;border-radius:8px;
+        display:flex;align-items:center;justify-content:center;font-weight:700;
+        color:#374151;cursor:pointer;user-select:none;background:#fff;transition:all .12s
+      }
+      .rating-box:hover{border-color:#2563eb;color:#2563eb}
+      .rating-box.active{background:#2563eb;color:#fff;border-color:#2563eb}
+      .rating-hint{color:#6b7280;font-size:12px;margin-left:10px}
+
+/* ====== RECTÁNGULO DE FIRMA (ARREGLADO) ====== */
+/* Para <canvas class="sig-pad"> */
+canvas.sig-pad {
+  border: 1px dashed #9ca3af;
+  background: #ffffff;
+  border-radius: 6px;
+  display: block;
+}
+
+/* Para <div class="sig-pad"><canvas></canvas></div> */
+.sig-pad {
+  border: 1px dashed #9ca3af;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 4px;
+  display: inline-block;
+}
+
+.sig-pad canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: none;
+}
+
+
+
+
+/* === MENU DROPDOWN MODERNO === */
+.dropdown{ position:relative; }
+.btn-menu{
+  background:#1f8f53; color:#fff; border:1px solid #177543;
+  padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:600;
+  display:flex; align-items:center; gap:6px;
+}
+/* === Botón Menú: azul y alto fijo (sin saltos) === */
+.btn-menu{
+  /* COLOR */
+  background:#2563eb;              /* azul principal */
+  border:1px solid #1d4ed8;        /* borde azul más oscuro */
+  color:#fff;
+
+  /* TAMAÑO FIJO (EVITA REFLUJOS) */
+  height:36px;                     /* alto fijo del botón */
+  padding:0 14px;                  /* horizontal, sin alterar el alto */
+  margin:0;                        /* evita que márgenes alteren la línea */
+  font-size:14px;
+  line-height:1;                   /* fija la línea */
+  border-radius:10px;
+  box-sizing:border-box;           /* borde dentro del alto fijo */
+
+  /* ESTRUCTURA */
+  cursor:pointer;
+  font-weight:600;
+  display:inline-flex;             /* inline-flex evita “empujes” extraños */
+  align-items:center;
+  gap:8px;
+  vertical-align:middle;           /* alinéalo con el logo/nav */
+}
+
+/* MISMO TAMAÑO EN HOVER/FOCUS (solo color, sin cambios de tamaño) */
+.btn-menu:hover,
+.btn-menu:focus{
+  background:#1d4ed8;
+  border-color:#1e40af;
+}
+
+/* Foco accesible sin mover el layout */
+.btn-menu:focus-visible{
+  outline:2px solid #93c5fd;       /* azul claro */
+  outline-offset:2px;
+}
+
+.menu-section{
+  padding:8px 12px; font-size:11px; letter-spacing:.04em; color:#6b7280; font-weight:700;
+}
+
+.menu-item{
+  display:flex; align-items:center; gap:10px; padding:10px 12px;
+  color:#111827; text-decoration:none; font-size:14px;
+}
+.menu-item:hover{ background:#f3f4f6; }
+.menu-item .mi{
+  width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center;
+}
+
+.menu-item.danger{ color:#b91c1c; font-weight:700; }
+.menu-item.danger:hover{ background:#fee2e2; }
+.menu-dropdown hr{ margin:0; border:none; border-top:1px solid #f3f4f6; }
+
+/* Compacto en móviles */
+@media (max-width:640px){
+  .btn-menu{ padding:5px 8px; font-size:13px; }
+  .menu-dropdown{ width:220px; }
+}
+
+
+
+/* Botón Volver compacto */
+.btn.back{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border-radius:8px;
+  border:1px solid #d1d5db; background:#fff; color:#111827;
+  font-size:13px; text-decoration:none; cursor:pointer;
+}
+.btn.back:hover{ background:#f3f4f6; }
+.btn.back .arr{ font-weight:700; }
+
+/* Encabezado de card y de sección, con botón a la derecha */
+.card-header, .section-header{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-bottom:8px;
+}
+/* Títulos un poco más ajustados */
+.card-header h2, .section-header h3{ margin:0; }
+
+
+
+
+/* El contenedor ancla el panel */
+.dropdown{ position:relative; }
+
+/* El panel va ABSOLUTO debajo del botón (no afecta el flujo) */
+.menu-dropdown{
+  position:absolute;
+  top:calc(100% + 10px);
+  right:0;
+  z-index:1000;
+}
+
+/* Panel del menú con borde y sombra más notoria (para que se distinga del contenido) */
+.menu-dropdown{
+  border:1px solid #d0d7e2 !important;     /* gris azulado */
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .18) !important; /* sombra un poco más fuerte */
+  border-radius:12px;
+  background:#fff;                          /* asegura fondo opaco */
+}
+
+/* Reforzar bordes de botones/chips claros para que no parezcan "perderse" */
+.btn{ border:1px solid #d1d5db; }          /* ya lo tenías, lo reafirmamos */
+.btn:not(.primary):hover{ box-shadow: inset 0 0 0 1px #cbd5e1; }
+.badge, .chip, .tag{
+  border:1px solid #e5e7eb; border-radius:9999px; background:#fff;
+}
+
+
+/* === Menú desplegable: un poco más ancho y con items más sueltos === */
+
+/* 1) Ancho del panel */
+.menu-dropdown{
+  width: 280px;                 /* antes ~240px */
+  /* si en móvil quieres mantenerlo más compacto, ajusta con media query abajo */
+}
+
+/* 2) Items del menú: más padding horizontal y separación del icono */
+.menu-item{
+  padding: 12px 16px;           /* antes 10px 12px */
+  gap: 12px;                    /* más espacio entre icono y texto */
+  font-size: 14px;              /* consistente con tu UI */
+  line-height: 1.25;            /* mejora legibilidad en dos líneas */
+  white-space: normal;          /* permite salto de línea si fuera necesario */
+}
+
+/* 3) Iconos: caja fija para alinearlos mejor */
+.menu-item .mi{
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 4) Líneas divisoras: un poco más suaves */
+.menu-dropdown hr{
+  border-top: 1px solid #eef2f6;
+}
+
+/* 5) Opcional: en pantallas pequeñas no exagerar el ancho */
+@media (max-width: 640px){
+  .menu-dropdown{
+    width: 260px;
+  }
+}
+
+/* ====== NORMALIZACIÓN DE BOTONES Y CHIPS (modo estable) ====== */
+
+/* 1) Botón base: todos los botones con la MISMA altura y padding */
+.btn{
+  display:inline-flex;              /* centra contenido vertical/horizontal */
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+
+  height:32px;                      /* 👈 altura fija */
+  padding:0 12px;                   /* 👈 ancho consistente */
+  box-sizing:border-box;            /* borde no cambia el tamaño */
+
+  font-size:12px;                   /* tamaño de texto unificado */
+  font-weight:600;
+  line-height:1;                    /* evita aumentar alto por la fuente */
+  border-radius:8px;
+  border:1px solid #d1d5db;
+  background:#fff;
+  color:#111827;
+  text-decoration:none;
+  white-space:nowrap;               /* 👈 no partir en 2 líneas */
+  vertical-align:middle;
+  cursor:pointer;
+}
+
+/* 1.1 Variantes mantienen MISMA altura */
+.btn.primary{ background:#2563eb; border-color:#2563eb; color:#fff; }
+.btn.warn   { background:#f59e0b; border-color:#f59e0b; color:#111; }
+.btn.danger { background:#ef4444; border-color:#ef4444; color:#fff; }
+
+/* 1.2 Estados sin cambiar tamaño */
+.btn:hover, .btn:focus{ filter:brightness(.96); }
+.btn:focus-visible{ outline:2px solid #93c5fd; outline-offset:2px; }
+
+/* 1.3 Botón compacto opcional (si algún lugar lo necesita) */
+.btn.sm{ height:28px; padding:0 10px; font-size:11px; }
+
+/* 2) Pastillitas de estado (Abierto / Finalizado) iguales */
+.badge, .chip, .estado{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:24px; padding:0 10px; box-sizing:border-box;
+  border-radius:9999px; font-size:12px; font-weight:600;
+  border:1px solid #e5e7eb; background:#fff; white-space:nowrap;
+}
+/* Colores sugeridos de estado (si quieres usarlos como clases) */
+.estado.abierto   { color:#92400e; background:#fef9c3; border-color:#fde68a; }
+.estado.finalizado{ color:#065f46; background:#dcfce7; border-color:#a7f3d0; }
+
+/* 3) Acomodo de la columna Acciones: no se montan y no “bailan” */
+td .row{
+  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+}
+td .row .btn,
+td .row .badge,
+td .row .chip{ white-space:nowrap; }
+
+/* 4) Enlaces dentro de celdas (IDs, Ver, PDF) sin romper línea */
+table td a{ white-space:nowrap; }
+
+/* 5) Botón del MENÚ (azul) con alto fijo */
+.btn-menu{
+  display:inline-flex; align-items:center; gap:8px;
+  height:36px; padding:0 14px; box-sizing:border-box;
+  background:#2563eb; border:1px solid #1d4ed8; color:#fff;
+  font-size:14px; font-weight:600; line-height:1; border-radius:10px;
+}
+.btn-menu:hover{ background:#1d4ed8; border-color:#1e40af; }
+
+/* 6) Dropdown del menú bien anclado */
+.dropdown{ position:relative; }
+.menu-dropdown{
+  position:absolute; top:calc(100% + 10px); right:0; z-index:1000;
+  width:260px;
+  border:1px solid #d0d7e2;
+  box-shadow:0 14px 34px rgba(15,23,42,.18);
+  border-radius:12px; background:#fff;
+}
+.menu-item{ padding:12px 16px; gap:12px; }
+.menu-item .mi{ width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; }
+
+
+/* ====== GRID DE FIRMAS ====== */
+.sig-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;   /* PC: 2 por fila */
+  gap:12px;
+}
+
+.sig-col{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:12px;
+}
+
+.sig-img{
+  max-width:100%;
+  border:1px solid #e5e7eb;
+  border-radius:6px;
+}
+
+/* ====== SOLO EN CELULAR ====== */
+@media (max-width: 640px){
+  .sig-grid{
+    grid-template-columns: 1fr !important;  /* fuerza 1 por fila */
+  }
+}
+/* ===== Firmas: 2×2 en PC, 1×4 en celular ===== */
+.sig-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px;
+}
+.sig-col{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:12px;
+}
+.sig-img,
+.sig-col img,
+.sig-col canvas{
+  max-width:100%;
+  height:auto;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  border-radius:6px;
+  display:block;
+}
+@media (max-width: 640px){
+  .sig-grid{ grid-template-columns: 1fr !important; }
+}
+
+/* Canvas de firmas muy sensible en móvil */
+.sig-pad{
+  display:block;
+  width:100%;              /* ocupa todo el ancho del contenedor */
+  height:auto;             /* la altura la fija el JS al escalar */
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  background:#fff;
+
+  /* CLAVE: el navegador no roba el gesto (no scroll/zoom) */
+  touch-action:none;
+  -ms-touch-action:none;   /* IE/Edge heredados */
+  /* ayuda al motor a preparar animación de pintura */
+  will-change: transform;
+}
+
+/* En pantallas angostas, garantizamos una altura mínima visible */
+@media (max-width: 640px){
+  .sig-pad{
+    min-height: 140px;
+  }
+}
+
+/* ====== Solo para el form de tickets ====== */
+.form-ticket h3{
+  margin-top: 14px;
+  margin-bottom: 10px;
+}
+
+/* --- Fechas y horas: dos columnas x dos filas compactas --- */
+.form-ticket .grid-fechas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 320px)); /* 2 columnas responsivas */
+  gap: 12px 20px;     /* (fila, columna) */
+  align-items: end;   /* alinea la base de los inputs */
+}
+.form-ticket .grid-fechas label {
+  display:block;
+  font-size: .92rem;
+  margin-bottom: 4px;
+}
+.form-ticket .grid-fechas input[type="date"],
+.form-ticket .grid-fechas input[type="time"]{
+  height: 34px;
+  padding: 6px 8px;
+  width: 100%;
+  max-width: 100%;
+}
+
+/* --- Sede + Ubicación: Sede estrecha + Ubicación larga en la misma fila --- */
+.form-ticket .row-sede-ubi {
+  display: grid;
+  grid-template-columns: 180px 1fr; /* Sede angosta, Ubicación toma el resto */
+  gap: 12px 20px;
+  align-items: end;
+}
+.form-ticket .row-sede-ubi label {
+  display:block;
+  font-size: .92rem;
+  margin-bottom: 4px;
+}
+.form-ticket .row-sede-ubi select,
+.form-ticket .row-sede-ubi input[type="text"]{
+  height: 34px;
+  padding: 6px 8px;
+  width: 100%;
+}
+
+/* --- Responsive: en pantallas pequeñas, una columna --- */
+@media (max-width: 640px){
+  .form-ticket .grid-fechas{
+    grid-template-columns: 1fr;  /* 1 columna */
+  }
+  .form-ticket .row-sede-ubi{
+    grid-template-columns: 1fr;  /* 1 columna */
+  }
+}
+
+
+/* ====== Equipo compacto, 3 por renglón ====== */
+.form-ticket .equipo-toolbar{
+  display:flex; justify-content:flex-end; align-items:center;
+  gap:8px; margin-bottom:10px; flex-wrap:wrap;
+}
+
+.form-ticket #inp_busqueda_inv{
+  height: 30px; padding: 4px 8px; font-size: .88rem;
+  min-width: 180px; max-width: 240px;
+}
+
+/* Botones compactos */
+.form-ticket .equipo-toolbar .btn{
+  height: 30px; padding: 2px 10px; font-size: .88rem; line-height: 1;
+}
+
+/* Grilla 3×N */
+.form-ticket .grid-equipo-3{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr)); /* 3 por renglón */
+  gap: 10px 14px;
+  align-items:end;
+}
+
+/* Etiquetas + inputs compactos */
+.form-ticket .grid-equipo-3 label{
+  display:block; font-size:.9rem; margin-bottom:4px;
+}
+.form-ticket .grid-equipo-3 input[type="text"]{
+  height: 30px; padding: 6px 8px; font-size:.9rem; width:100%;
+}
+
+/* Una sola columna para filas que quieras completas (si las usas) */
+.form-ticket .grid-equipo-1{
+  display:grid; grid-template-columns: 1fr; gap:10px; align-items:end;
+}
+.form-ticket .grid-equipo-1 input[type="text"]{
+  height:30px; padding:6px 8px; font-size:.9rem; width:100%;
+}
+
+/* Responsive: en móviles pasa a 1 por renglón */
+@media (max-width: 720px){
+  .form-ticket .grid-equipo-3{ grid-template-columns: 1fr; }
+  .form-ticket #inp_busqueda_inv{ min-width: 160px; max-width: 200px; }
+}
+
+
+
+
+    </style>
+  </head>
+
+  <body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="site-header">
+      <!-- LOGO + TEXTO -->
+      <a href="{{ url_for('tickets.dashboard') }}" class="brand" aria-label="Inicio Mesa de Ayuda TIC">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="logo">
+        <span>Mesa de Ayuda TIC</span>
+      </a>
+
+      <!-- MENÚ -->
+     
+<nav class="top-nav">
+  {% if session.get('user_id') %}
+
+  <!-- Nuevo menú dropdown -->
+  <div class="dropdown">
+    <!-- Botón -->
+    <button class="btn-menu" id="btnMainMenu" aria-haspopup="true" aria-expanded="false" aria-controls="panelMainMenu">
+      <span class="icon-bars" aria-hidden="true">≡</span>
+      Menú
+      <span class="caret" aria-hidden="true">▼</span>
+    </button>
+
+    <!-- Panel -->
+    <div class="menu-dropdown" id="panelMainMenu" role="menu" hidden>
+
+      <!-- SECCIÓN: REPORTES -->
+      <div class="menu-section">REPORTES</div>
+      <a class="menu-item" href="{{ url_for('tickets.reportes_fechas') }}">
+        <span class="mi" aria-hidden="true">📊</span> Reportes por fechas
+      </a>
+
+      <hr>
+      
+      <!-- SECCIÓN: TICKETS -->
+<div class="menu-section">TICKETS</div>
+
+<a class="menu-item" href="{{ url_for('tickets.dashboard') }}">
+  <span class="mi" aria-hidden="true">📋</span> Listado de tickets
+</a>
+
+<a class="menu-item" href="{{ url_for('tickets.crear_ticket') }}">
+  <span class="mi" aria-hidden="true">➕</span> Nuevo ticket
+</a>
+
+<hr>
+
+      <!-- SECCIÓN: DATOS -->
+
+      <!-- SECCIÓN: ADMINISTRACIÓN (solo admin) -->
+      {% if session.get('role') == 'admin' %}
+      <div class="menu-section">ADMINISTRACIÓN</div>
+      <a class="menu-item" href="{{ url_for('users.usuarios') }}">
+        <span class="mi" aria-hidden="true">👥</span> Usuarios
+      </a>
+      <hr>
+      {% endif %}
+
+      <!-- CUENTA -->
+      <a class="menu-item" href="{{ url_for('users.editar_firma_form') }}">
+        <span class="mi" aria-hidden="true">✒️</span> Mi firma
+      </a>
+
+      <!-- Cerrar sesión -->
+      <a class="menu-item danger" href="{{ url_for('auth.logout') }}">
+        <span class="mi" aria-hidden="true">⎋</span> Cerrar sesión
+      </a>
+
+    </div>
+  </div>
+
+  {% else %}
+    <a href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+  {% endif %}
+</nav>
+
+
+
+    </header>
+
+    <!-- ===== CONTENIDO ===== -->
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=True) %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <div class="card">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+
+   
+<!-- ===== SCRIPTS ===== -->
+<script>
+  (function(){
+    // Toggle del panel del menú
+    const btn = document.getElementById('adminMenuBtn');
+    const panel = document.getElementById('adminMenuPanel');
+    if(btn && panel){
+      function abrir(){ panel.hidden = false; btn.setAttribute('aria-expanded','true'); }
+      function cerrar(){ panel.hidden = true; btn.setAttribute('aria-expanded','false'); }
+
+      btn.addEventListener('click', ()=>{
+        const abierto = btn.getAttribute('aria-expanded') === 'true';
+        abierto ? cerrar() : abrir();
+      });
+
+      document.addEventListener('click', (e)=>{
+        if(!panel.hidden && !panel.contains(e.target) && e.target !== btn){
+          cerrar();
+        }
+      });
+
+      document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape') cerrar();
+      });
+    }
+
+    // Acordeón: abre una sección a la vez
+    document.querySelectorAll(".accordion-btn").forEach(button=>{
+      button.addEventListener("click", ()=>{
+        const content = button.nextElementSibling;
+        const isOpen = content && content.style.display === "flex";
+        document.querySelectorAll(".accordion-content").forEach(c=> c.style.display="none");
+        document.querySelectorAll(".accordion-btn").forEach(b=> b.classList.remove("open"));
+        if(content && !isOpen){
+          content.style.display = "flex";
+          button.classList.add("open");
+        }
+      });
+    });
+  })();
+</script>
+
+<!-- === FIRMA: LIBRERÍA PRINCIPAL === -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+
+<!-- === FIRMA: TU ARCHIVO HELPER (si existe) === -->
+<script src="{{ url_for('static', filename='js/signaturepad.js') }}"></script>
+
+<!-- === BLOQUE QUE LAS VISTAS USAN PARA SUS PROPIOS SCRIPTS === -->
+{% block scripts %}{% endblock %}
+
+<!-- === ENTER → IR AL SIGUIENTE CAMPO === -->
+<script>
+document.addEventListener('keydown', function(e) {
+  if (e.key === "Enter") {
+    const elemento = e.target;
+    const formulario = elemento.form;
+    if (!formulario) return;                  // no enviar
+    if (elemento.tagName.toLowerCase() === "textarea") return;
+    e.preventDefault();
+
+    const campos = Array.from(formulario.querySelectorAll(
+      "input, select, textarea, button"
+    )).filter(c => !c.disabled && c.type !== "hidden");
+
+    const indiceActual = campos.indexOf(elemento);
+    const siguiente = campos[indiceActual + 1];
+    if (siguiente) siguiente.focus();
+  }
+});
+</script>
+   
+<script>
+(function(){
+  const btn = document.getElementById('btnMainMenu');
+  const panel = document.getElementById('panelMainMenu');
+  if(!btn || !panel) return;
+
+  const open = ()=>{ panel.hidden=false; btn.setAttribute('aria-expanded','true'); };
+  const close= ()=>{ panel.hidden=true;  btn.setAttribute('aria-expanded','false'); };
+
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const isOpen = btn.getAttribute('aria-expanded')==='true';
+    isOpen ? close() : open();
+  });
+
+  document.addEventListener('click', (e)=>{
+    if(!panel.hidden && !panel.contains(e.target) && e.target!==btn) close();
+  });
+
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); });
+})();
+</script>
+
+  </body>
+</html>

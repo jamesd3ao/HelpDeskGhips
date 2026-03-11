@@ -1,0 +1,24 @@
+
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<div class="row" style="justify-content:space-between">
+  <h2 style="margin:0">Usuarios</h2>
+  <a class="btn primary" href="{{ url_for('users.crear_usuario') }}">+ Nuevo usuario</a>
+</div>
+<table>
+  <thead><tr><th>#</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Creado</th><th>Acciones</th></tr></thead>
+  <tbody>
+  {% for u in usuarios %}
+   <tr><td>{{ u['id'] }}</td><td>{{ u['username'] }}</td><td>{{ u['display_name'] }}</td><td>{{ u['role'] }}</td><td>{{ u['created_at'][:19].replace('T',' ') }}</td>
+   <td>
+      <a class="btn" href="{{ url_for('users.editar_usuario', user_id=u['id']) }}">Editar</a>
+      <a class="btn warn" href="{{ url_for('users.cambiar_contrasena', user_id=u['id']) }}">Cambiar contraseña</a>
+      <form method="post" action="{{ url_for('users.eliminar_usuario', user_id=u['id']) }}" style="display:inline" onsubmit="return confirm('¿Eliminar este usuario?');"><button class="btn danger" type="submit">Eliminar</button></form>
+   </td></tr>
+  {% else %}
+   <tr><td colspan="6" class="subtle">Sin usuarios.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

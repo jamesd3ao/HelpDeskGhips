@@ -1,0 +1,623 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar ticket' if mode=='edit' else 'Crear ticket' }}{% endblock %}
+
+{% block content %}
+
+<h2>
+  {% if mode == 'edit' %}
+    Editar ticket #{{ t['id'] }}
+  {% else %}
+    Crear ticket
+  {% endif %}
+</h2>
+
+<form method="post" id="form-ticket" class="form-ticket is-compact"
+      action="{{ url_for('tickets.editar_ticket', ticket_id=t['id']) if mode=='edit' else url_for('tickets.crear_ticket') }}">
+
+  {# ===== Token de idempotencia (POST único) ===== #}
+  <input type="hidden" name="submit_token" value="{{ submit_token|default('') }}">
+
+  <!-- =================== Fechas y horas =================== -->
+  <h3>Fechas y horas</h3>
+  <div class="grid-fechas">
+    <div>
+      <label>Fecha de inicio</label>
+      <input type="date" name="fecha_inicio" value="{{ t['fecha_inicio'] if mode=='edit' else '' }}">
+    </div>
+    <div>
+      <label>Fecha final</label>
+      <input type="date" name="fecha_final" value="{{ t['fecha_final'] if mode=='edit' else '' }}">
+    </div>
+    <div>
+      <label>Hora de inicio</label>
+      <input type="time" name="hora_inicio" value="{{ t['hora_inicio'] if mode=='edit' else '' }}">
+    </div>
+    <div>
+      <label>Hora final</label>
+      <input type="time" name="hora_final" value="{{ t['hora_final'] if mode=='edit' else '' }}">
+    </div>
+  </div>
+
+  <!-- =================== Sede y ubicación =================== -->
+  <h3>Sede y ubicación</h3>
+  <div class="row-sede-ubi">
+    <div>
+      <label>Sede</label>
+      {% set sede_val = t['sede'] if mode=='edit' else '' %}
+      <select name="sede">
+        <option value=""></option>
+        {% for s in ['PRADO','PRINCIPAL'] %}
+          <option value="{{ s }}" {% if sede_val==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Ubicación</label>
+      <input type="text" name="ubicacion" placeholder="Ej: Piso 2 - Consultorio 204"
+             value="{{ t['ubicacion'] if mode=='edit' else '' }}">
+    </div>
+  </div>
+
+  <!-- =================== Tipo de soporte =================== -->
+  <h3>Tipo de soporte</h3>
+  <div class="row">
+    <label><input type="checkbox" name="soporte_hardware" value="1" {% if mode=='edit' and t['soporte_hardware'] %}checked{% endif %}> Hardware</label>
+    <label><input type="checkbox" name="soporte_Software" value="1" {% if mode=='edit' and t['soporte_Software'] %}checked{% endif %}> Software</label>
+    <label><input type="checkbox" name="soporte_redes" value="1" {% if mode=='edit' and t['soporte_redes'] %}checked{% endif %}> Redes</label>
+  </div>
+
+
+  <!-- =================== Equipo =================== -->
+ <h3>Equipo</h3>
+
+<!-- Barra: búsqueda y acciones -->
+<div class="equipo-toolbar">
+  <input type="text" id="inp_busqueda_inv" placeholder="COIN o Cód. inventario" inputmode="numeric">
+  <button type="button" class="btn" id="btn_buscar_inventario">🔎 Buscar inventario</button>
+  <button type="button" class="btn" id="btn_limpiar_inventario">🧹 Limpiar</button>
+</div>
+
+<!-- TODO el bloque en una sola grilla 3×N -->
+<div class="grid-equipo-3">
+  <!-- Fila 1: Tipo | Marca | Modelo -->
+  <div>
+    <label>Tipo</label>
+    <input type="text" id="inp_equipo" name="equipo_equipo"
+           value="{{ t['equipo_equipo'] if mode=='edit' else '' }}">
+  </div>
+  <div>
+    <label>Marca</label>
+    <input type="text" id="inp_marca" name="equipo_marca"
+           value="{{ t['equipo_marca'] if mode=='edit' else '' }}">
+  </div>
+  <div>
+    <label>Modelo</label>
+    <input type="text" id="inp_modelo" name="equipo_modelo"
+           value="{{ t['equipo_modelo'] if mode=='edit' else '' }}">
+  </div>
+
+  <!-- Fila 2: Cód. inventario | COIN | RAM -->
+  <div>
+    <label>Cód. inventario</label>
+    <input type="text" id="inp_codinv" name="equipo_cod_inventario"
+           value="{{ t['equipo_cod_inventario'] if mode=='edit' else '' }}">
+  </div>
+  <div>
+    <label>COIN</label>
+    <input type="text" id="inp_coin" name="equipo_coin"
+           value="{{ t['equipo_coin'] if mode=='edit' else '' }}">
+  </div>
+  <div>
+    <label>RAM</label>
+    <input type="text" id="inp_ram" name="equipo_ram" placeholder="Ej: 16 GB"
+           value="{{ t['equipo_ram'] if mode=='edit' else '' }}">
+  </div>
+
+  <!-- Fila 3: D. Duro | Procesador | (vacío / futuro Serie) -->
+  <div>
+    <label>D. Duro</label>
+    <input type="text" id="inp_disco" name="equipo_disco" placeholder="Ej: 512 GB SSD"
+           value="{{ t['equipo_disco'] if mode=='edit' else '' }}">
+  </div>
+  <div>
+    <label>Procesador</label>
+    <input type="text" id="inp_procesador" name="equipo_procesador" placeholder="Ej: Intel i5 10400"
+           value="{{ t['equipo_procesador'] if mode=='edit' else '' }}">
+  </div>
+  <div><!-- libre por si luego agregas Serie/GPU/etc. --></div>
+</div>
+
+  <!-- =================== Tipo de servicio =================== -->
+  <h3>Tipo de servicio</h3>
+  {% set svc = t['servicio_tipo'] if mode=='edit' else '' %}
+  <div class="row">
+    <label><input type="radio" name="servicio_tipo" value="Preventivo"  {% if svc=='Preventivo' %}checked{% endif %}> Preventivo</label>
+    <label><input type="radio" name="servicio_tipo" value="Correctivo"  {% if svc=='Correctivo' %}checked{% endif %}> Correctivo</label>
+    <label><input type="radio" name="servicio_tipo" value="Otro"        {% if svc=='Otro' %}checked{% endif %}> Otro</label>
+    <input type="text" name="servicio_otro" placeholder="¿Cuál?" style="max-width:280px"
+           value="{{ t['servicio_otro'] if mode=='edit' else '' }}">
+  </div>
+
+  <!-- =================== Falla asociada =================== -->
+  <h3>Falla asociada</h3>
+  {% set falla = t['falla_asociada'] if mode=='edit' else '' %}
+  <div class="row">
+    <label><input type="radio" name="falla_asociada" value="Daño"          {% if falla=='Daño' %}checked{% endif %}> Daño</label>
+    <label><input type="radio" name="falla_asociada" value="Mal uso"       {% if falla=='Mal uso' %}checked{% endif %}> Mal uso</label>
+    <label><input type="radio" name="falla_asociada" value="Obsolescencia" {% if falla=='Obsolescencia' %}checked{% endif %}> Obsolescencia</label>
+  </div>
+
+  <!-- =================== Descripciones =================== -->
+  <h3>Descripción del servicio</h3>
+  <div class="voice-box">
+    <textarea
+      name="descripcion_solicitud"
+      id="descripcion_solicitud"
+      inputmode="text"
+      maxlength="{{ MAX_DESC_SOLICITUD }}"
+      required
+      oninput="updateCount('descripcion_solicitud')">{{ t['descripcion_solicitud'] if mode=='edit' else '' }}</textarea>
+
+    <button type="button" class="btn" onclick="hablar('descripcion_solicitud')" style="margin-top:6px;">
+      🎤 Hablar
+    </button>
+  </div>
+  <div class="subtle" id="descripcion_solicitud_count">0 / {{ MAX_DESC_SOLICITUD }}</div>
+
+  <h3>Descripción del trabajo realizado</h3>
+  <div class="voice-box">
+    <textarea
+      name="descripcion_trabajo"
+      id="descripcion_trabajo"
+      inputmode="text"
+      maxlength="{{ MAX_DESC_TRABAJO }}"
+      oninput="updateCount('descripcion_trabajo')">{{ t['descripcion_trabajo'] if mode=='edit' else '' }}</textarea>
+
+    <button type="button" class="btn" onclick="hablar('descripcion_trabajo')" style="margin-top:6px;">
+      🎤 Hablar
+    </button>
+  </div>
+  <div class="subtle" id="descripcion_trabajo_count">0 / {{ MAX_DESC_TRABAJO }}</div>
+
+  <hr style="margin:18px 0">
+
+  <!-- =================== Evaluación del servicio (1 a 5) =================== -->
+  {% set ev1 = t['eval_calidad_servicio'] if mode=='edit' else None %}
+  {% set ev2 = t['eval_calidad_informacion'] if mode=='edit' else None %}
+  {% set ev3 = t['eval_oportunidad_respuesta'] if mode=='edit' else None %}
+  {% set ev4 = t['eval_actitud_tecnico'] if mode=='edit' else None %}
+
+  <h3>Evaluación del servicio (1 a 5)</h3>
+  <div class="card" style="padding:12px">
+    <div class="rating-row" data-name="eval_calidad_servicio" data-current="{{ ev1 or '' }}">
+      <div class="rating-label">Calidad del servicio</div>
+      <div class="rating-boxes">
+        {% for i in [1,2,3,4,5] %}<div class="rating-box" data-value="{{ i }}">{{ i }}</div>{% endfor %}
+      </div>
+      <span class="rating-hint">(1 = Muy pobre, 5 = Excelente)</span>
+      <input type="hidden" name="eval_calidad_servicio" value="{{ ev1 or '' }}">
+    </div>
+
+    <div class="rating-row" data-name="eval_calidad_informacion" data-current="{{ ev2 or '' }}" style="margin-top:10px">
+      <div class="rating-label">Calidad de la información</div>
+      <div class="rating-boxes">
+        {% for i in [1,2,3,4,5] %}<div class="rating-box" data-value="{{ i }}">{{ i }}</div>{% endfor %}
+      </div>
+      <span class="rating-hint">(1 = Muy pobre, 5 = Excelente)</span>
+      <input type="hidden" name="eval_calidad_informacion" value="{{ ev2 or '' }}">
+    </div>
+
+    <div class="rating-row" data-name="eval_oportunidad_respuesta" data-current="{{ ev3 or '' }}" style="margin-top:10px">
+      <div class="rating-label">Oportunidad de respuesta</div>
+      <div class="rating-boxes">
+        {% for i in [1,2,3,4,5] %}<div class="rating-box" data-value="{{ i }}">{{ i }}</div>{% endfor %}
+      </div>
+      <span class="rating-hint">(1 = Muy lenta, 5 = Muy rápida)</span>
+      <input type="hidden" name="eval_oportunidad_respuesta" value="{{ ev3 or '' }}">
+    </div>
+
+    <div class="rating-row" data-name="eval_actitud_tecnico" data-current="{{ ev4 or '' }}" style="margin-top:10px">
+      <div class="rating-label">Actitud del personal técnico</div>
+      <div class="rating-boxes">
+        {% for i in [1,2,3,4,5] %}<div class="rating-box" data-value="{{ i }}">{{ i }}</div>{% endfor %}
+      </div>
+      <span class="rating-hint">(1 = Deficiente, 5 = Excelente)</span>
+      <input type="hidden" name="eval_actitud_tecnico" value="{{ ev4 or '' }}">
+    </div>
+  </div>
+
+  <!-- =================== Firmas =================== -->
+  <h3>Firmas</h3>
+
+  <div class="sig-grid">
+
+    <!-- Soporte técnico: BLOQUEADO EN CREAR y EDITAR -->
+    <div class="sig-col">
+      <label>Firma de soporte técnico</label>
+
+      <div class="sig-name">
+        {% if mode == 'edit' %}
+          {% set nombre_tecnico = (t['firma_tecnico_mantenimiento_nombre'] or (user['display_name'] or user['username'])) %}
+        {% else %}
+          {% set nombre_tecnico = (user['display_name'] or user['username']) %}
+        {% endif %}
+        <input type="text" value="{{ nombre_tecnico }}" disabled>
+        <input type="hidden" name="firma_tecnico_mantenimiento_nombre" value="{{ nombre_tecnico }}">
+      </div>
+
+      <div class="sig-label">(no editable)</div>
+
+      {% if mode=='edit' and t['firma_tecnico_mantenimiento_img'] %}
+        <div class="subtle" style="margin:6px 0 4px">Firma actual:</div>
+        <img src="{{ t['firma_tecnico_mantenimiento_img'] }}" class="sig-img">
+        <input type="hidden" name="firma_tecnico_mantenimiento_img" value="{{ t['firma_tecnico_mantenimiento_img'] }}">
+      {% else %}
+        {% if user_firma_img %}
+          <div class="subtle" style="margin:6px 0 4px">Firma del técnico (perfil):</div>
+          <img src="{{ user_firma_img }}" class="sig-img">
+          <input type="hidden" name="firma_tecnico_mantenimiento_img" value="{{ user_firma_img }}">
+        {% else %}
+          <div class="subtle">Este usuario no tiene firma guardada en su perfil.</div>
+          <input type="hidden" name="firma_tecnico_mantenimiento_img" value="">
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- Usuario que gestiona: SIEMPRE editable -->
+    <div class="sig-col">
+      <label>Firma del usuario que gestiona</label>
+      <div class="sig-name">
+        <input type="text" name="firma_usuario_gestiona_nombre" placeholder="Nombre del usuario"
+               value="{{ t['firma_usuario_gestiona_nombre'] if mode=='edit' else '' }}">
+      </div>
+      <div class="sig-label">(firma abajo)</div>
+      <canvas id="pad_usuario" class="sig-pad" width="420" height="130"></canvas>
+      <div class="sig-actions">
+        <button type="button" class="btn" onclick="clearSig('pad_usuario')">Limpiar</button>
+      </div>
+      {% if mode=='edit' and t['firma_usuario_gestiona_img'] %}
+        <div class="subtle">Firma actual:</div>
+        <img src="{{ t['firma_usuario_gestiona_img'] }}" class="sig-img">
+      {% endif %}
+      <input type="hidden" name="firma_usuario_gestiona_img" id="firma_usuario_gestiona_img">
+    </div>
+
+    <!-- Logística: SIEMPRE editable -->
+    <div class="sig-col">
+      <label>Firma de logística</label>
+      <div class="sig-name">
+        <input type="text" name="firma_logistica_nombre" placeholder="Nombre de logística"
+               value="{{ t['firma_logistica_nombre'] if mode=='edit' else '' }}">
+      </div>
+      <div class="sig-label">(firma abajo)</div>
+      <canvas id="pad_logistica" class="sig-pad" width="420" height="130"></canvas>
+      <div class="sig-actions">
+        <button type="button" class="btn" onclick="clearSig('pad_logistica')">Limpiar</button>
+      </div>
+      {% if mode=='edit' and t['firma_logistica_img'] %}
+        <div class="subtle">Firma actual:</div>
+        <img src="{{ t['firma_logistica_img'] }}" class="sig-img">
+      {% endif %}
+      <input type="hidden" name="firma_logistica_img" id="firma_logistica_img">
+    </div>
+
+    <!-- Técnico que realiza mantenimiento: SIEMPRE editable -->
+    <div class="sig-col">
+      <label>Firma del técnico que realiza mantenimiento</label>
+      <div class="sig-name">
+        <input type="text" name="firma_supervisor_nombre" placeholder="Nombre del técnico"
+               value="{{ t['firma_supervisor_nombre'] if mode=='edit' else '' }}">
+      </div>
+      <div class="sig-label">(firma abajo)</div>
+      <canvas id="pad_supervisor" class="sig-pad" width="420" height="130"></canvas>
+      <div class="sig-actions">
+        <button type="button" class="btn" onclick="clearSig('pad_supervisor')">Limpiar</button>
+      </div>
+      {% if mode=='edit' and t['firma_supervisor_img'] %}
+        <div class="subtle">Firma actual:</div>
+        <img src="{{ t['firma_supervisor_img'] }}" class="sig-img">
+      {% endif %}
+      <input type="hidden" name="firma_supervisor_img" id="firma_supervisor_img">
+    </div>
+
+  </div> <!-- /sig-grid -->
+
+  <p class="subtle">Puedes firmar con el mouse o con el dedo (pantallas táctiles).</p>
+
+  <p style="margin-top:12px">
+    <!-- Guardar -->
+    <button class="btn primary" id="btn-guardar" type="submit" data-loading="Guardando…">
+      {{ 'Guardar cambios' if mode=='edit' else 'Guardar' }}
+    </button>
+
+    <!-- Volver -->
+    {% if mode == 'edit' and t %}
+      <a class="btn" id="btn-volver" href="{{ url_for('tickets.ver_ticket', ticket_id=t['id']) }}">Volver</a>
+    {% else %}
+      <a class="btn" id="btn-volver" href="{{ url_for('tickets.dashboard') }}">Volver</a>
+    {% endif %}
+  </p>
+
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /* ========= Firma: alta sensibilidad en móvil ========= */
+
+  function scaleSigCanvas(canvas){
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    const parentWidth = canvas.parentElement ? canvas.parentElement.clientWidth : canvas.clientWidth || 480;
+    const cssWidth  = Math.min(parentWidth, 700);
+    // Respeta altura CSS si existe; si no, calcula compacta
+    const cssHStyle = getComputedStyle(canvas).height;
+    const cssHeight = Math.max(56, Math.round(parseFloat(cssHStyle) || (cssWidth * 0.28)));
+
+    canvas.style.width  = cssWidth + 'px';
+    canvas.style.height = cssHeight + 'px';
+    canvas.width  = Math.floor(cssWidth  * ratio);
+    canvas.height = Math.floor(cssHeight * ratio);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+
+  function initSignaturePads(selector = 'canvas.sig-pad'){
+    const pads = {};
+    document.querySelectorAll(selector).forEach((c) => {
+      scaleSigCanvas(c);
+      const pad = new SignaturePad(c, {
+        minWidth: 0.9,
+        maxWidth: 3.0,
+        throttle: 10,
+        velocityFilterWeight: 0.75,
+        penColor: '#111',
+        backgroundColor: '#fff',
+        onBegin: () => { document.body.style.touchAction = 'none'; },
+        onEnd:   () => { document.body.style.touchAction = ''; }
+      });
+      pads[c.id] = pad;
+    });
+
+    function onResize(){
+      Object.values(pads).forEach((pad) => {
+        const data = pad.toData();
+        scaleSigCanvas(pad.canvas);
+        pad.clear();
+        if (data && data.length) {
+          try { pad.fromData(data); } catch(e) {}
+        }
+      });
+    }
+    window.addEventListener('resize', onResize, { passive: true });
+    window.addEventListener('orientationchange', onResize, { passive: true });
+
+    return pads;
+  }
+
+  // Inicializa pads (solo los editables en esta vista)
+  const _pads = initSignaturePads('canvas.sig-pad');
+
+  function clearSig(canvasId){
+    if (_pads && _pads[canvasId]) _pads[canvasId].clear();
+  }
+
+  // Envío: empaquetar firmas editables en hidden
+  document.getElementById('form-ticket').addEventListener('submit', function(){
+    const map = {
+      'pad_usuario':     'firma_usuario_gestiona_img',
+      'pad_logistica':   'firma_logistica_img',
+      'pad_supervisor':  'firma_supervisor_img'
+    };
+    Object.entries(map).forEach(([canvasId, hiddenId])=>{
+      const pad = _pads && _pads[canvasId];
+      const hid = document.getElementById(hiddenId);
+      if (pad && hid) hid.value = pad.isEmpty() ? '' : pad.toDataURL('image/png');
+    });
+  });
+
+  /* ========= Ratings 1..5 ========= */
+  (function initRatings(){
+    document.querySelectorAll('.rating-row').forEach(row => {
+      const current = (row.getAttribute('data-current') || '').trim();
+      const boxes   = row.querySelectorAll('.rating-box');
+      const input   = row.querySelector('input[type="hidden"]');
+
+      if (current && input) {
+        input.value = current;
+        boxes.forEach(b => { if (String(b.dataset.value) === String(current)) b.classList.add('active'); });
+      }
+      boxes.forEach(b => {
+        b.addEventListener('click', () => {
+          boxes.forEach(x => x.classList.remove('active'));
+          b.classList.add('active');
+          if (input) input.value = b.dataset.value;
+        });
+      });
+    });
+  })();
+
+  /* ========= Contadores de caracteres ========= */
+  function updateCount(id){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const max = parseInt(el.getAttribute('maxlength') || '0', 10);
+    const cnt = document.getElementById(id + '_count');
+    if (cnt) cnt.textContent = (el.value.length) + ' / ' + max;
+  }
+  ['descripcion_solicitud','descripcion_trabajo'].forEach(updateCount);
+
+  /* ========= Autocompletar fecha/hora de inicio en crear ========= */
+  (function autoinitDateTime() {
+    const mode = {{ ('"edit"' if mode=='edit' else '"create"')|safe }};
+    if (mode !== 'create') return;
+    const pad2 = n => String(n).padStart(2, '0');
+    const d = new Date();
+    const today = `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+    const now   = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+    const f = document.querySelector('input[name="fecha_inicio"]');
+    const h = document.querySelector('input[name="hora_inicio"]');
+    if (f && !f.value) f.value = today;
+    if (h && !h.value) h.value = now;
+  })();
+
+  /* ========= Anti–doble envío ========= */
+  (function antiDoubleSubmit(){
+    const form = document.getElementById('form-ticket');
+    if (!form) return;
+    let submitting = false;
+    form.addEventListener('submit', function(e){
+      if (submitting) { e.preventDefault(); return false; }
+      submitting = true;
+      const submits = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+      submits.forEach(b => {
+        b.disabled = true;
+        if (b.id === 'btn-guardar') {
+          const txt = b.getAttribute('data-loading') || 'Guardando…';
+          b.dataset.oldText = b.textContent;
+          b.textContent = txt;
+        }
+      });
+      form.addEventListener('keydown', ev => { if (ev.key === 'Enter') ev.preventDefault(); }, {once:true});
+    });
+  })();
+
+  /* ========= Dictado por voz ========= */
+  function hablar(id){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('Tu navegador no soporta dictado aquí. Usa el micrófono del teclado del celular.'); return; }
+    const recog = new SR();
+    recog.lang = 'es-CO';
+    recog.continuous = false;
+    recog.interimResults = false;
+    recog.onresult = function(e){
+      const texto = e.results[0][0].transcript;
+      const campo = document.getElementById(id);
+      if (!campo) return;
+      campo.value = (campo.value ? (campo.value + ' ') : '') + texto + ' ';
+      campo.dispatchEvent(new Event('input'));
+      campo.focus();
+    };
+    recog.onerror = function(){ alert('No se pudo usar el dictado del navegador.'); };
+    try { recog.start(); } catch(e) {}
+  }
+</script>
+
+<!-- === Inventario: volcar datos al formulario === -->
+<script>
+function volcarEquipo(d){
+  if(!d || !d.ok) return;
+  const $ = id => document.getElementById(id);
+
+  // Equipo
+  $('inp_equipo').value      = d.equipo         || "";
+  $('inp_marca').value       = d.marca          || "";
+  $('inp_modelo').value      = d.modelo         || "";
+  $('inp_ram').value         = d.ram            || "";
+  $('inp_disco').value       = d.disco          || "";
+  $('inp_procesador').value  = d.procesador     || "";
+  $('inp_coin').value        = d.coin           || "";
+  $('inp_codinv').value      = d.cod_inventario || "";
+
+  // Sede (insensible a mayúsculas; agrega si no existe)
+  if (typeof d.sede === 'string') {
+    const sel = document.querySelector('select[name="sede"]');
+    if (sel) {
+      const val = d.sede.trim();
+      let opt = Array.from(sel.options).find(o => (o.value || '').toLowerCase() === val.toLowerCase());
+      if (!opt && val) {
+        const o = document.createElement('option');
+        o.value = val; o.textContent = val;
+        sel.appendChild(o);
+      }
+      sel.value = val;
+    }
+  }
+
+  // Ubicación
+  if (typeof d.ubicacion === 'string') {
+    const inp = document.querySelector('input[name="ubicacion"]');
+    if (inp) inp.value = d.ubicacion.trim();
+  }
+}
+</script>
+
+<!-- === Buscar inventario (usa el campo nuevo si trae valor) === -->
+<script>
+document.getElementById('btn_buscar_inventario')?.addEventListener('click', async ()=>{
+  const box  = document.getElementById('inp_busqueda_inv');
+  const coin = document.getElementById('inp_coin').value.trim();
+  const cod  = document.getElementById('inp_codinv').value.trim();
+
+  // Prioriza el campo nuevo
+  let q = (box?.value || '').trim();
+  let params = null;
+
+  if (q) {
+    const onlyDigits = /^[0-9]+$/.test(q);
+    params = (onlyDigits && q.length <= 15) ? { coin: q } : { cod: q };
+  } else if (coin) {
+    params = { coin };
+  } else if (cod) {
+    params = { cod };
+  }
+
+  if(!params){
+    alert('Escribe COIN o Cód. Inventario');
+    return;
+  }
+
+  const qs = new URLSearchParams(params);
+
+  const resp = await fetch(`/tickets/inventario/buscar?${qs}`, {
+    credentials: 'same-origin'
+  });
+
+  const contentType = resp.headers.get('content-type') || '';
+  if (!resp.ok || !contentType.includes('application/json')) {
+    alert('No se pudo consultar inventario (¿sesión expirada o ruta incorrecta?).');
+    return;
+  }
+
+  const data = await resp.json();
+  if(!data.ok){
+    alert(data.error || 'No encontrado');
+    return;
+  }
+
+  if (data.coin)           document.getElementById('inp_coin').value   = data.coin;
+  if (data.cod_inventario) document.getElementById('inp_codinv').value = data.cod_inventario;
+
+  volcarEquipo(data);
+});
+</script>
+
+<!-- === Limpiar inventario === -->
+<script>
+document.getElementById('btn_limpiar_inventario')?.addEventListener('click', ()=>{
+  const limpiar = id => { const el = document.getElementById(id); if(el) el.value = ""; };
+
+  // Campo de búsqueda nuevo
+  limpiar('inp_busqueda_inv');
+
+  // Campos equipo
+  limpiar('inp_equipo');
+  limpiar('inp_marca');
+  limpiar('inp_modelo');
+  limpiar('inp_ram');
+  limpiar('inp_disco');
+  limpiar('inp_procesador');
+  limpiar('inp_coin');
+  limpiar('inp_codinv');
+
+  // Sede / ubicación
+  const selSede = document.querySelector('select[name="sede"]');
+  if (selSede) selSede.value = "";
+
+  const inpUbi = document.querySelector('input[name="ubicacion"]');
+  if (inpUbi) inpUbi.value = "";
+});
+</script>
+
+{% endblock %}

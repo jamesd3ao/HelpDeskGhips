@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Iniciar sesión{% endblock %}
+
+{% block content %}
+<h2>Iniciar sesión</h2>
+
+<form method="post" id="login-form">
+  <div class="grid">
+    <div>
+      <label>Usuario</label>
+      <input type="text" name="username" required autofocus>
+    </div>
+
+    <div>
+      <label>Contraseña</label>
+      <input type="password" name="password" required>
+    </div>
+  </div>
+
+  <p style="margin-top:12px">
+    <button class="btn primary" type="submit">Entrar</button>
+  </p>
+
+  <p class="subtle">
+    
+  </p>
+</form>
+
+<!-- 👇 ESTE SCRIPT HACE QUE ENTER INICIE SESIÓN -->
+<script>
+document.addEventListener('keydown', function(e) {
+  const form = document.getElementById('login-form');
+  if (!form) return; // si no estamos en login, no hacer nada
+
+  if (e.key === "Enter") {
+    e.stopPropagation();   // evita que el script global bloquee el Enter
+    form.submit();         // ¡hace login!
+  }
+});
+</script>
+
+{% endblock %}

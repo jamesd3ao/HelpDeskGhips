@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Crear usuario{% endblock %}
+
+{% block content %}
+  <h2>Crear usuario</h2>
+
+  <form method="post" id="form-crear-usuario">
+    <div class="grid">
+      <div>
+        <label>Usuario (login) *</label>
+        <input type="text" name="username" value="{{ (form.username if form else '') }}" required>
+      </div>
+
+      <div>
+        <label>Nombre visible</label>
+        <input type="text" name="display_name" value="{{ (form.display_name if form else '') }}">
+      </div>
+
+      <div>
+        <label>Rol *</label>
+        <select name="role" required>
+          {# Si el backend pasa ROLES, lo usamos; si no, mostramos fijo admin/usuario #}
+          {% if roles %}
+            {% for r in roles %}
+              <option value="{{ r }}"
+                {% if form and form.role == r %}selected{% endif %}>
+                {{ 'usuario' if r == 'usuario' else r }}
+              </option>
+            {% endfor %}
+          {% else %}
+            <option value="usuario" {% if form and form.role=='usuario' %}selected{% endif %}>usuario</option>
+            <option value="admin"   {% if form and form.role=='admin'   %}selected{% endif %}>admin</option>
+          {% endif %}
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:8px">
+      <label>Contraseña *</label>
+      <input type="password" name="password" required minlength="4" placeholder="Mínimo 4 caracteres">
+    </div>
+
+    <h3 style="margin-top:14px">Firma del usuario (opcional)</h3>
+    <div class="sig-label">(Dibuja abajo; se guardará como imagen en base64)</div>
+    <canvas id="pad_user_signature" class="sig-pad" width="420" height="130"></canvas>
+    <div class="sig-actions">
+      <button type="button" class="btn" id="btn-clear-sig">Limpiar</button>
+    </div>
+    <input type="hidden" name="firma_img" id="firma_img">
+
+    <div style="margin-top:12px;">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn" href="{{ url_for('users.usuarios') }}">Volver</a>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    // Si ya cargas signaturepad.js en base.html, aquí solo lo usamos
+    (function(){
+      const canvas = document.getElementById('pad_user_signature');
+      const clearBtn = document.getElementById('btn-clear-sig');
+      const hiddenInput = document.getElementById('firma_img');
+      const form = document.getElementById('form-crear-usuario');
+
+      // Fallback simple si no tienes SignaturePadSimple.
+      // Si usas una función personalizada (SignaturePadSimple),
+      // sustitúyela aquí.
+      let sigPad = null;
+      if (typeof SignaturePadSimple === 'function') {
+        sigPad = SignaturePadSimple('pad_user_signature');
+        clearBtn.addEventListener('click', function(){ sigPad.clear(); });
+        form.addEventListener('submit', function(){
+          const dataUrl = sigPad.isBlank() ? '' : sigPad.toDataURL();
+          hiddenInput.value = dataUrl;
+        });
+      } else {
+        // Si no hay SignaturePadSimple, deshabilita la firma para evitar errores.
+        clearBtn.addEventListener('click', function(){ if (canvas.getContext) { const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);} });
+        form.addEventListener('submit', function(){ hiddenInput.value = ''; });
+      }
+    })();
+  </script>
+{% endblock %}

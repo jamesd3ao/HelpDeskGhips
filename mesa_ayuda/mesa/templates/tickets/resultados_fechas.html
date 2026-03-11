@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Tickets: {{ f1 }} a {{ f2 }}{% endblock %}
+{% block content %}
+
+<div class="card">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+    <h3 style="margin:0;">Tickets entre {{ f1 }} y {{ f2 }}</h3>
+
+    <a class="btn" href="{{ url_for('tickets.dashboard', f1=f1, f2=f2) }}">
+      <span style="font-weight:700;">←</span> Volver
+    </a>
+  </div>
+
+  <p style="margin:10px 0; display:flex; gap:10px; flex-wrap:wrap">
+    <a class="btn" href="{{ url_for('tickets.reportes_fechas', f1=f1, f2=f2) }}">Nueva búsqueda</a>
+    <a class="btn primary" href="{{ url_for('tickets.descargar_zip', f1=f1, f2=f2) }}">Descargar todos (ZIP)</a>
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Fecha (inicio / final)</th>
+        <th>Creado por</th>
+        <th>Sede</th>
+        <th>Servicio</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for t in tickets %}
+      <tr>
+        <td>{{ t['id'] }}</td>
+        <td>{{ t['fecha_inicio'] or t['created_at'][:10] }}{% if t['fecha_final'] %} → {{ t['fecha_final'] }}{% endif %}</td>
+        <td>{{ t['creador'] }}</td>
+        <td>{{ t['sede'] or '-' }}</td>
+        <td>{{ t['servicio_tipo'] or '-' }}</td>
+        <td>
+          <a class="btn" href="{{ url_for('tickets.ver_ticket', ticket_id=t['id']) }}">Ver</a>
+          <a class="btn" href="{{ url_for('tickets.pdf_ticket', ticket_id=t['id']) }}">PDF</a>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="subtle">No hay tickets en ese rango.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+</div>
+
+{% endblock %}

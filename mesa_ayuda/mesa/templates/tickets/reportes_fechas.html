@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Reportes por fechas{% endblock %}
+
+{% block content %}
+<h2>Reportes por fechas</h2>
+
+<div class="card">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
+    <h3 style="margin:0;">Seleccionar rango</h3>
+
+    {# Volver → LISTADO (si hay fechas, se envían al listado; si no, abre listado de hoy) #}
+    {% if f1 and f2 %}
+      <a class="btn" href="{{ url_for('tickets.dashboard', f1=f1, f2=f2) }}">
+        <span style="font-weight:700;">←</span> Volver
+      </a>
+    {% else %}
+      <a class="btn" href="{{ url_for('tickets.dashboard') }}">
+        <span style="font-weight:700;">←</span> Volver
+      </a>
+    {% endif %}
+  </div>
+
+  <form method="post" class="grid-3" style="align-items:end">
+    <div>
+      <label>Fecha inicio</label>
+      <input type="date" name="fecha_inicio" value="{{ f1 or '' }}" required>
+    </div>
+    <div>
+      <label>Fecha final</label>
+      <input type="date" name="fecha_final" value="{{ f2 or '' }}" required>
+    </div>
+    <div>
+      <button class="btn primary">Buscar</button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

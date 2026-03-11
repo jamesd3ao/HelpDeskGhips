@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}Ticket {{ t['id'] }}{% endblock %}
+
+{% block content %}
+
+<h2>Ticket #{{ t['id'] }}</h2>
+<div class="row">
+  <div><strong>Creado por:</strong> {{ t['creador'] }}</div>
+</div>
+
+<h3>Fechas y horas</h3>
+<div class="grid-3">
+  <div><label>Fecha de inicio</label><div>{{ t['fecha_inicio'] or '-' }}</div></div>
+  <div><label>Fecha final</label><div>{{ t['fecha_final'] or '-' }}</div></div>
+  <div></div>
+</div>
+<div class="grid-3">
+  <div><label>Hora de inicio</label><div>{{ t['hora_inicio'] or '-' }}</div></div>
+  <div><label>Hora final</label><div>{{ t['hora_final'] or '-' }}</div></div>
+  <div></div>
+</div>
+
+<h3>Sede y ubicación</h3>
+<div class="grid">
+  <div><label>Sede</label><div>{{ t['sede'] or '-' }}</div></div>
+  <div><label>Ubicación</label><div>{{ t['ubicacion'] or '-' }}</div></div>
+</div>
+
+<h3>Tipo de soporte</h3>
+<div class="row">
+  <div>Hardware: <strong>{{ 'Sí' if t['soporte_hardware'] else 'No' }}</strong></div>
+  <div>Software: <strong>{{ 'Sí' if t['soporte_Software'] else 'No' }}</strong></div>
+  <div>Redes: <strong>{{ 'Sí' if t['soporte_redes'] else 'No' }}</strong></div>
+</div>
+
+<h3>Equipo</h3>
+<div class="grid-3">
+  <div><label>Tipo</label><div>{{ t['equipo_equipo'] or '-' }}</div></div>
+  <div><label>Marca</label><div>{{ t['equipo_marca'] or '-' }}</div></div>
+  <div><label>Modelo</label><div>{{ t['equipo_modelo'] or '-' }}</div></div>
+</div>
+<div class="grid-3">
+  <div><label>Cód. inventario</label><div>{{ t['equipo_cod_inventario'] or '-' }}</div></div>
+  <div><label>COIN</label><div>{{ t['equipo_coin'] or '-' }}</div></div>
+  <div><label>D. Duro</label><div>{{ t['equipo_disco'] or '-' }}</div></div>
+</div>
+<div class="grid-3">
+  <div><label>RAM</label><div>{{ t['equipo_ram'] or '-' }}</div></div>
+  <div><label>Procesador</label><div>{{ t['equipo_procesador'] or '-' }}</div></div>
+  <div></div>
+</div>
+
+<h3>Tipo de servicio</h3>
+<div class="row">
+  <div><strong>{{ t['servicio_tipo'] or '-' }}</strong></div>
+  {% if t['servicio_tipo']=='Otro' %}
+    <div>¿Cuál?: {{ t['servicio_otro'] or '-' }}</div>
+  {% endif %}
+</div>
+
+<h3>Falla asociada</h3>
+<div><strong>{{ t['falla_asociada'] or '-' }}</strong></div>
+
+<h3>Descripción del servicio</h3>
+<div style="white-space:pre-wrap">{{ t['descripcion_solicitud'] }}</div>
+
+<h3>Descripción del trabajo realizado</h3>
+<div style="white-space:pre-wrap">{{ t['descripcion_trabajo'] or '-' }}</div>
+
+<h3>Evaluación del servicio</h3>
+<div class="grid">
+  <div><label>Calidad del servicio</label><div>{{ t['eval_calidad_servicio'] or '-' }}</div></div>
+  <div><label>Calidad de la información</label><div>{{ t['eval_calidad_informacion'] or '-' }}</div></div>
+</div>
+<div class="grid">
+  <div><label>Oportunidad de respuesta</label><div>{{ t['eval_oportunidad_respuesta'] or '-' }}</div></div>
+  <div><label>Actitud del personal técnico</label><div>{{ t['eval_actitud_tecnico'] or '-' }}</div></div>
+</div>
+
+<h3>Firmas</h3>
+<div class="sig-grid">
+
+  <div class="sig-col">
+    <label>Firma De Soporte Técnico</label>
+    <div><strong>Nombre:</strong> {{ t['firma_tecnico_mantenimiento_nombre'] or '-' }}</div>
+    {% if t['firma_tecnico_mantenimiento_img'] %}
+      <div style="margin-top:6px"><img src="{{ t['firma_tecnico_mantenimiento_img'] }}" class="sig-img"></div>
+    {% else %}
+      <div class="subtle">(sin firma)</div>
+    {% endif %}
+  </div>
+
+  <div class="sig-col">
+    <label>Firma del usuario que gestiona</label>
+    <div><strong>Nombre:</strong> {{ t['firma_usuario_gestiona_nombre'] or '-' }}</div>
+    {% if t['firma_usuario_gestiona_img'] %}
+      <div style="margin-top:6px"><img src="{{ t['firma_usuario_gestiona_img'] }}" class="sig-img"></div>
+    {% else %}
+      <div class="subtle">(sin firma)</div>
+    {% endif %}
+  </div>
+
+  <div class="sig-col">
+  <label>Firma de Logística</label>
+
+  <!-- nombre fijo -->
+  <div><strong>Nombre:</strong> {{ t['firma_logistica_nombre'] or 'Logística' }}</div>
+
+  {% if t['firma_logistica_img'] %}
+    <div style="margin-top:6px"><img src="{{ t['firma_logistica_img'] }}" class="sig-img"></div>
+  {% else %}
+    <div class="subtle">(sin firma)</div>
+  {% endif %}
+</div>
+
+  <div class="sig-col">
+    <label>Firma del supervisor</label>
+    <div><strong>Nombre:</strong> {{ t['firma_supervisor_nombre'] or '-' }}</div>
+    {% if t['firma_supervisor_img'] %}
+      <div style="margin-top:6px"><img src="{{ t['firma_supervisor_img'] }}" class="sig-img"></div>
+    {% else %}
+      <div class="subtle">(sin firma)</div>
+    {% endif %}
+  </div>
+
+</div>
+
+<p style="margin-top:16px" class="row">
+  <a class="btn" href="{{ url_for('tickets.dashboard') }}">Volver</a>
+  <a class="btn" href="{{ url_for('tickets.pdf_ticket', ticket_id=t['id']) }}">Descargar PDF</a>
+
+  {% if 'estado' in t.keys() and t['estado'] != 'finalizado' %}
+
+    <a class="btn" href="{{ url_for('tickets.editar_ticket', ticket_id=t['id']) }}">Editar</a>
+
+    <form class="inline" method="post"
+          action="{{ url_for('tickets.finalizar_ticket', ticket_id=t['id']) }}"
+          onsubmit="return confirm('¿Deseas finalizar el ticket?');">
+      <button class="btn warn" type="submit">Finalizar</button>
+    </form>
+
+  {% else %}
+
+    <span class="subtle">Ticket finalizado — no editable</span>
+
+    <!-- Enviar a Logística: SOLO aparece si HAY FIRMA -->
+{% if t['firma_logistica_img'] and t['firma_logistica_img'].startswith('data:image') %}
+  <form class="inline" method="post"
+        action="{{ url_for('tickets.enviar_logistica', ticket_id=t['id']) }}"
+        onsubmit="return confirm('Enviar PDF a Logística?');">
+      <button class="btn primary" type="submit">
+          Enviar a Logística
+      </button>
+  </form>
+{% endif %}
+
+    {% if user and user['role'] == 'admin' %}
+      <form class="inline" method="post"
+            action="{{ url_for('tickets.reabrir_ticket', ticket_id=t['id']) }}">
+        <button class="btn" style="background:#0ea5e9; color:white;">Reabrir</button>
+      </form>
+    {% endif %}
+
+  {% endif %}
+</p>
+
+{% endblock %}

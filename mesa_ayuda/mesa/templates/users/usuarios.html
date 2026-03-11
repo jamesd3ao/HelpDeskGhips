@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+  <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 12px;">
+
+  <h2 style="margin:0;">Usuarios</h2>
+
+  <div style="display:flex; gap:10px; align-items:center;">
+
+    <!-- BOTÓN VOLVER -->
+    <a class="btn" 
+       style="padding:6px 10px; font-size:12px;" 
+       href="{{ url_for('tickets.dashboard') }}">
+      ← Volver
+    </a>
+
+    <!-- BOTÓN CREAR USUARIO -->
+    <a class="btn primary" 
+       style="padding:6px 10px; font-size:12px;" 
+       href="{{ url_for('users.crear_usuario') }}">
+      Crear usuario
+    </a>
+
+  </div>
+
+</div>
+
+  {% if usuarios and usuarios|length > 0 %}
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Usuario</th>
+          <th>Nombre</th>
+          <th>Rol</th>
+          <th style="width: 200px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for usr in usuarios %}
+        <tr>
+          <td>{{ usr.id }}</td>
+          <td>{{ usr.username }}</td>
+          <td>{{ usr.display_name }}</td>
+          <td>{{ usr.role }}</td>
+          <td class="row">
+            <a class="btn" href="{{ url_for('users.editar_usuario', user_id=usr.id) }}">Editar</a>
+
+            <form class="inline" method="post"
+                  action="{{ url_for('users.eliminar_usuario', user_id=usr.id) }}"
+                  onsubmit="return confirm('¿Eliminar definitivamente al usuario {{ usr.username }}?');">
+              <button class="btn danger" type="submit">Eliminar</button>
+            </form>
+
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="subtle">No hay usuarios para mostrar.</p>
+  {% endif %}
+{% endblock %}

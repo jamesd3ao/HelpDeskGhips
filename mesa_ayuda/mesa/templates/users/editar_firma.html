@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Mi firma{% endblock %}
+
+{% block content %}
+<h2>Mi firma</h2>
+
+<div class="card">
+  <p><strong>Firma actual:</strong></p>
+  {% if user and user['firma_img'] %}
+    <img src="{{ user['firma_img'] }}" alt="Firma actual"
+         style="max-width:420px;border:1px solid #e5e7eb;background:#fff">
+  {% else %}
+    <div class="subtle">No tienes firma guardada.</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <!-- Encabezado de la sección con VOLVER dentro del recuadro -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;">
+    <h3 style="margin:0;">Editar / Dibujar nueva firma</h3>
+
+    <!-- Botón Volver dentro del recuadro -->
+    <button type="button"
+            class="btn"
+            onclick="history.back()"
+            style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;
+                   border:1px solid #d1d5db;background:#fff;color:#111827;font-size:13px;">
+      <span style="font-weight:700;">←</span> Volver
+    </button>
+  </div>
+
+  <p class="subtle">Dibuja tu firma en el recuadro y guarda.</p>
+
+  <canvas id="pad_firma" class="sig-pad" width="480" height="160"
+          style="border:1px dashed #9ca3af;background:#fff"></canvas>
+
+  <div class="sig-actions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+    <button type="button" class="btn" id="btn_clear">Limpiar</button>
+    <button type="button" class="btn warn" id="btn_cargar_actual">Cargar firma actual</button>
+  </div>
+
+  <form method="post" action="{{ url_for('users.editar_firma_save') }}" style="margin-top:10px">
+    <input type="hidden" name="firma_img" id="firma_img">
+    <button class="btn primary" id="btn_guardar">Guardar firma</button>
+  </form>
+
+  <form method="post" action="{{ url_for('users.borrar_firma') }}" style="margin-top:8px">
+    <button class="btn danger" onclick="return confirm('¿Borrar tu firma?')">Borrar firma</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Requiere que base.html ya cargue static/js/signaturepad.js (SignaturePadSimple)
+  const pad = SignaturePadSimple('pad_firma');
+
+  document.getElementById('btn_clear').addEventListener('click', () => pad.clear());
+
+  // Cargar la firma guardada dentro del canvas (para poder retocarla encima)
+  document.getElementById('btn_cargar_actual').addEventListener('click', () => {
+    const actual = {{ (user['firma_img'] if user else '')|tojson }};
+    if (!actual) { alert('No tienes firma guardada.'); return; }
+    const img = new Image();
+    img.onload = () => {
+      const c = document.getElementById('pad_firma');
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height);
+      const ratio = Math.min(c.width / img.width, c.height / img.height);
+      const w = img.width * ratio, h = img.height * ratio;
+      const x = (c.width - w) / 2, y = (c.height - h) / 2;
+      ctx.drawImage(img, x, y, w, h);
+    };
+    img.src = actual;
+  });
+
+  // Antes de enviar, captura el dataURL del canvas
+  document.getElementById('btn_guardar').addEventListener('click', (e) => {
+    const val = pad.isBlank() ? '' : pad.toDataURL();
+    document.getElementById('firma_img').value = val;
+  });
+</script>
+{% endblock %}

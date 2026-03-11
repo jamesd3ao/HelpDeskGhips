@@ -1,4 +1,5 @@
 
 flask>=2.2
+gunicorn
 reportlab
 werkzeug
